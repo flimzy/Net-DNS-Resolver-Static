@@ -3,4 +3,5 @@ Makefile.PL
 MANIFEST
 README
 t/Net-DNS-Resolver-Static.t
+t/dns-cache.txt
 lib/Net/DNS/Resolver/Static.pm
