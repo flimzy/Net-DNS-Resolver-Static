@@ -1,0 +1,6 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Net-DNS-Resolver-Static.t
+lib/Net/DNS/Resolver/Static.pm
