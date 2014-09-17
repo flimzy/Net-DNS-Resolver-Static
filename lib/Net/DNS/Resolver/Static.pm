@@ -66,9 +66,12 @@ sub send {
     my ( $self, $host, $type, $class ) = @_;
     $class ||= 'IN';
     if ( ! $type ) {
-        if ( Net::IP::ip_is_ipv4($host) or Net::IP::ip_is_ipv6($host) ) {
+        if ( Net::IP::ip_is_ipv4($host) ) {
             $type = 'PTR';
-            $host = Net::IP::ip_reverse($host);
+            $host = Net::IP::ip_reverse($host,32,4);
+        } elsif ( Net::IP::ip_is_ipv6($host) ) {
+            $type = 'PTR';
+            $host = Net::IP::ip_reverse($host,128,6);
         } else {
             $type = 'A';
         }
@@ -76,25 +79,38 @@ sub send {
     if ( $host !~ /\.$/ ) {
         $host .= '.';
     }
-    if ( ! exists $self->{static_dns}{"$host $class $type"} ) {
-        if ( $type eq 'CNAME' or ! exists $self->{static_dns}{"$host $class CNAME"} ) {
-            $self->_cache_miss($host,$class,$type)
-        }
-        $type = 'CNAME';
+
+    my $cached_record;
+    if ( exists $self->{static_dns}{"$host $class $type"} ) {
+        # If we have an exact match, use it
+        $cached_record = $self->{static_dns}{"$host $class $type"};
+    } elsif ( exists $self->{static_dns}{"$host $class CNAME"} ) {
+        # If there's no exact match, look for a CNAME match
+        $cached_record = $self->{static_dns}{"$host $class CNAME"};
+    } else {
+        # Finally, issue an error and die
+        $self->_cache_miss($host,$class,$type);
     }
-    my $cached_record = $self->{static_dns}{"$host $class $type"};
     if ( defined $cached_record->[0] and $cached_record->[0] =~ /^error\s+"(.*)"$/ ) {
         $self->{errorstring} = $1;
         return;
     }
-    my $answer = Net::DNS::Packet->new($host,$type,$class);
+    my $packet = Net::DNS::Packet->new($host,$type,$class);
     if ( defined $cached_record ) {
-        $answer->push( answer =>
+        $packet->push( answer =>
             map { Net::DNS::RR->new( $_ ) }
             grep { $_ }
             @$cached_record );
     }
-    return $answer;
+    for my $rr ( $packet->answer ) {
+        if ( $rr->type eq 'CNAME' ) {
+            my $subpacket = $self->send($rr->cname,$type,$class);
+            for my $subrr ( $subpacket->answer ) {
+                $packet->push( answer => $subrr );
+            }
+        }
+    }
+    return $packet;
 }
 
 sub _cache_miss {

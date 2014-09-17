@@ -75,3 +75,22 @@ c.com.  IN  A   ; No record
     ok( $packet = $res->send('c.com'), 'Test for negative result' );
     is( scalar $packet->answer, 0, 'No results for c.com. IN A');
 }
+
+{
+    # Test NXDOMAIN
+    my $res = Net::DNS::Resolver::Static->new( static_data => 'perl.test. IN A error "NXDOMAIN"' );
+
+    ok( ! $res->query('perl.test'), "No response to perl.test query");
+}
+
+{
+    # Test a PTR CNAME
+    my $res = Net::DNS::Resolver::Static->new( static_data => '
+        165.51.128.66.in-addr.arpa.         IN      CNAME   165.160/27.51.128.66.in-addr.arpa.
+        165.160/27.51.128.66.in-addr.arpa.  IN      PTR     mail.theartfarm.com.
+    ');
+
+    my $packet;
+    ok( $packet = $res->send('66.128.51.165') );
+    is( scalar($packet->answer), 2, "Expecting two answers for CNAME");
+}
