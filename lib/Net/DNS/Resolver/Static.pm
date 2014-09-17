@@ -138,24 +138,22 @@ Net::DNS::Resolver::Static - Static DNS resolver class
 =head1 DESCRIPTION
 
 This is a subclass of L<Net::DNS::Resolver> which reads all DNS answers
-from a local static file, rather than from the network. It is designed
-for the purpose of unit testing code which uses Net::DNS::Resolver.
+from a provided static string or file, rather than from the network. It
+is designed for the purpose of unit testing code which uses
+L<Net::DNS::Resolver>.
 
+This module overloads the ->new() method and the ->send() methods of
+L<Net::DNS::Resolver>.
 
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+As this is only a minimal sublass of <Net::DNS::Resolver>, you should
+generally refer to the documentation for L<Net::DNS::Resolver> and
+its related modules for full functionality.
 
 =head1 AUTHOR
 
-Jonathan Hall, E<lt>jonhall@E<gt>
+Jonathan Hall E<lt>flimzy@flimzy.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
