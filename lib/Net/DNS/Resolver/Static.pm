@@ -119,9 +119,17 @@ Net::DNS::Resolver::Static - Static DNS resolver class
 
 =head1 SYNOPSIS
 
-  use Net::DNS::Resolver::Static './static-dns-cache.txt';
+  use Net::DNS::Resolver::Static;
 
-  my $res = Net::DNS::Resolver::Static->new;
+  # Initiate your resolver object with pre-defined DNS answers
+  my $res = Net::DNS::Resolver::Static->new( static_data => '
+          a.com.        IN  A   1.2.3.4
+          b.com. 3600   IN  MX  mail.b.com.
+      ' );
+
+  # Or point to a file containing your DNS answers
+  my $res = Net::DNS::Resolver::Static->new(
+      static_file => './t/dns-cache.txt')
 
   # Then use it just like Net::DNS::Resolver
 
