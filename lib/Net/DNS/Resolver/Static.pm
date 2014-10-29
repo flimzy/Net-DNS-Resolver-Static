@@ -5,6 +5,8 @@ use warnings;
 
 use base 'Net::DNS::Resolver';
 use Net::IP;
+use Socket;
+use Storable qw(freeze thaw);
 
 our $VERSION = '0.01';
 
@@ -37,6 +39,7 @@ sub new {
     if ( ! $self->{static_dns} ) {
         die "$package: FATAL: No static cache provided";
     }
+    $self->{_bg_queue} = [];
     return $self;
 }
 
@@ -123,6 +126,22 @@ EOF
     die "Dying\n";  # Net::DNS::Async captures $@, so we don't see the 'die' output
                     # in some caess, so we display all the useful info in the warning
                     # instead
+}
+
+# This implementation of bgsend/bgread is super ugly, but it works. We do nothing
+# in the background, and we actually violate the API contract for bgsend() specified
+# in the Net::DNS::Resolver docs by returning an answer packet rather than a socket
+# but as of this writing, it works just fine, as Net::DNS::Resolver apparently
+# makes no effort to ensure that a socket is returned. So we just return the ansewr
+# then bgread echoes it back to the caller.
+
+sub bgsend {
+    return shift->send( @_ );
+}
+
+sub bgread {
+    shift;
+    return shift;
 }
 
 

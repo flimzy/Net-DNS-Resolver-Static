@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use lib 't';
 
-#use Test::More tests => 11;
+#use Test::More tests => 14;
 use Test::More 'no_plan';
 use Test::Exception;
 
@@ -21,10 +22,9 @@ throws_ok { Net::DNS::Resolver::Static->new() } qr/No static cache provided/;
     # Test that string parsing works
     my $res;
 
-    ok( $res = Net::DNS::Resolver::Static->new(
-            static_data => '
-a.com.  3600    IN      A   1.2.3.4
-b.com   IN  A   1.2.3.4'
+    ok( $res = Net::DNS::Resolver::Static->new( static_data => '
+        a.com.  3600    IN      A   1.2.3.4
+        b.com   IN  A   1.2.3.4'
         ));
     is_deeply( $res->{static_dns}, {
         'b.com. IN A' => ['b.com   IN  A   1.2.3.4'],
@@ -94,3 +94,16 @@ c.com.  IN  A   ; No record
     ok( $packet = $res->send('66.128.51.165') );
     is( scalar($packet->answer), 2, "Expecting two answers for CNAME");
 }
+
+{
+    # Test bgsend and bgread
+    my $res;
+    ok( $res = Net::DNS::Resolver::Static->new( static_data => '
+        a.com.  3600    IN      A   1.2.3.4
+    '));
+    my $socket = $res->bgsend('a.com.');
+    ok( $socket, 'bgsend result is truthy');
+    my $packet = $res->bgread( $socket );
+    is( scalar( $packet->answer),1,'Expected one answer from bgread');
+}
+

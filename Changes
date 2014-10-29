@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::DNS::Resolver::Static.
 
+0.02  Wed Oct 29 12:40:58 CDT 2014
+	- Add bgsend and bgread support
+
 0.01  Wed Sep 17 09:18:17 2014
 	- original version; created by h2xs 1.23 with options
 		-XAn Net::DNS::Resolver::Static
