@@ -128,20 +128,24 @@ EOF
                     # instead
 }
 
-# This implementation of bgsend/bgread is super ugly, but it works. We do nothing
-# in the background, and we actually violate the API contract for bgsend() specified
-# in the Net::DNS::Resolver docs by returning an answer packet rather than a socket
-# but as of this writing, it works just fine, as Net::DNS::Resolver apparently
-# makes no effort to ensure that a socket is returned. So we just return the ansewr
-# then bgread echoes it back to the caller.
-
 sub bgsend {
-    return shift->send( @_ );
+    my $answer = shift->send( @_ ) or return;
+    socketpair(my $in, my $out, AF_UNIX, SOCK_STREAM, PF_UNSPEC )
+        or return;
+    print $in freeze($answer);
+    close $in;
+    return $out;
 }
 
 sub bgread {
-    shift;
-    return shift;
+    my ( $self, $socket ) = @_;
+    my $answer;
+    my $buf;
+    while ( read($socket,$buf,1024) ) {
+        $answer .= $buf;
+    }
+    close($socket);
+    return thaw($answer);
 }
 
 
