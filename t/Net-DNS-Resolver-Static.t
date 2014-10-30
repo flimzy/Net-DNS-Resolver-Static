@@ -3,8 +3,7 @@ use strict;
 use warnings;
 use lib 't';
 
-#use Test::More tests => 14;
-use Test::More 'no_plan';
+use Test::More tests => 25;
 use Test::Exception;
 
 BEGIN { use_ok('Net::DNS::Resolver::Static') };
@@ -18,22 +17,20 @@ throws_ok { Net::DNS::Resolver::Static->new() } qr/No static cache provided/;
     dies_ok { $res->_populate_static_cache('bogus data') } qr/Cache syntax error/;
 }
 
-{
-    # Test that string parsing works
+{   # Test that string parsing works
     my $res;
 
     ok( $res = Net::DNS::Resolver::Static->new( static_data => '
         a.com.  3600    IN      A   1.2.3.4
-        b.com   IN  A   1.2.3.4'
-        ));
+        b.com   IN  A   1.2.3.4
+    '));
     is_deeply( $res->{static_dns}, {
         'b.com. IN A' => ['b.com   IN  A   1.2.3.4'],
         'a.com. IN A' => ['a.com.  3600    IN      A   1.2.3.4']
     } )
 };
 
-{
-    # Test that file parsing works
+{   # Test that file parsing works
     my $res;
 
     ok( $res = Net::DNS::Resolver::Static->new( static_file => './t/dns-cache.txt' ));
@@ -46,8 +43,8 @@ throws_ok { Net::DNS::Resolver::Static->new() } qr/No static cache provided/;
 
 {
     my $res = Net::DNS::Resolver::Static->new( static_data => '
-a.com.  IN  A   1.2.3.4
-');
+        a.com.  IN  A   1.2.3.4
+    ');
     ok( $res->send('a.com'), 'Test that trailing . is added for lookup');
     my $packet;
     ok( $packet = $res->send('a.com.'), 'Basic lookup returns an answer');
@@ -61,30 +58,28 @@ a.com.  IN  A   1.2.3.4
 
 {
     my $res = Net::DNS::Resolver::Static->new( static_data => '
-b.com.  IN  A   error "Foo error"
-');
+        b.com.  IN  A   error "Foo error"
+    ');
     ok( ! $res->send('b.com'), 'Test that error is cached' );
     is( $res->errorstring, 'Foo error', 'Error message as expected' );
 }
 
 {
     my $res = Net::DNS::Resolver::Static->new( static_data => '
-c.com.  IN  A   ; No record
-');
+        c.com.  IN  A   ; No record
+    ');
     my $packet;
     ok( $packet = $res->send('c.com'), 'Test for negative result' );
     is( scalar $packet->answer, 0, 'No results for c.com. IN A');
 }
 
-{
-    # Test NXDOMAIN
+{   # Test NXDOMAIN
     my $res = Net::DNS::Resolver::Static->new( static_data => 'perl.test. IN A error "NXDOMAIN"' );
 
     ok( ! $res->query('perl.test'), "No response to perl.test query");
 }
 
-{
-    # Test a PTR CNAME
+{   # Test a PTR CNAME
     my $res = Net::DNS::Resolver::Static->new( static_data => '
         165.51.128.66.in-addr.arpa.         IN      CNAME   165.160/27.51.128.66.in-addr.arpa.
         165.160/27.51.128.66.in-addr.arpa.  IN      PTR     mail.theartfarm.com.
@@ -95,8 +90,7 @@ c.com.  IN  A   ; No record
     is( scalar($packet->answer), 2, "Expecting two answers for CNAME");
 }
 
-{
-    # Test bgsend and bgread
+{   # Test bgsend and bgread
     my $res;
     ok( $res = Net::DNS::Resolver::Static->new( static_data => '
         a.com.  3600    IN      A   1.2.3.4
@@ -106,4 +100,3 @@ c.com.  IN  A   ; No record
     my $packet = $res->bgread( $socket );
     is( scalar( $packet->answer),1,'Expected one answer from bgread');
 }
-
